@@ -140,23 +140,32 @@ int main(int argc, char* argv[])
                 epoll_ctl(epfd,EPOLL_CTL_ADD,connfd,&ev);
             }
             else if(events[i].events&EPOLLIN)//如果是已经连接的用户，并且收到数据，那么进行读入。
-
             {
-                cout << "EPOLLIN" << endl;
                 if ( (sockfd = events[i].data.fd) < 0)
                     continue;
-                if ( (n = read(sockfd, line, MAXLINE)) < 0) {
-                    if (errno == ECONNRESET) {
-                        close(sockfd);
-                        events[i].data.fd = -1;
-                    } else
-                        std::cout<<"readline error"<<std::endl;
-                } else if (n == 0) {
-                    close(sockfd);
-                    events[i].data.fd = -1;
+                do
+                {
+                	n = read(sockfd, line, MAXLINE);
+                	if(n <= 0)
+                	{
+                		if(errno != EAGAIN)
+                		{
+                			close(sockfd);
+                			events[i].data.fd = -1;
+                			std::cout<<"Communication with  Client "<< inet_ntoa(clientaddr.sin_addr)<<" on socket "<< sockfd <<" Closed"<<std::endl;
+                			cout << "errno: " << strerror(errno) << endl<< endl;
+                			break;	
+                		}
+                		else
+                			continue;
+                	}
+                	cout << "read " << line << endl;
+               		write(sockfd, line, n);
+               		memset(line,0,sizeof(line));
                 }
-//                line[n] = '/0';
-                cout << "read " << line << endl;
+                while(1);
+
+//                line[n] = '/0
                 //设置用于写操作的文件描述符
 
                 ev.data.fd=sockfd;
@@ -165,8 +174,7 @@ int main(int argc, char* argv[])
                 ev.events=EPOLLOUT|EPOLLET;
                 //修改sockfd上要处理的事件为EPOLLOUT
 
-                //epoll_ctl(epfd,EPOLL_CTL_MOD,sockfd,&ev);
-                memset(line,0,sizeof(line));
+                epoll_ctl(epfd,EPOLL_CTL_MOD,sockfd,&ev);
 
             }
             else if(events[i].events&EPOLLOUT) // 如果有数据发送
