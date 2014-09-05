@@ -8,6 +8,7 @@
 #include <sys/fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define BACKLOG   1024
 #define BUFSIZE   128
@@ -218,6 +219,8 @@ int main(int argc, char* argv[])
         fprintf(stderr,"Usage:%s portnumber/a/n",argv[0]);
         return 1;
     }
+    
+    signal( SIGCHLD, SIG_IGN );
     
     select_test(portnumber,BACKLOG);
     return 0; 

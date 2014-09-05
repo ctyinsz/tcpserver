@@ -8,6 +8,7 @@
 #include <sys/fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define BACKLOG   2
 #define BUFSIZE   128
@@ -76,7 +77,7 @@ int dealreq(int sock)
 	char buffer[BUFSIZE+1]={0};
 	int clisocklen = sizeof(sockaddr);
 	if(sock<=0)
-		return -1;
+		exit(-1);
 		
 	//获得客户端的IP地址
 	getpeername(sock, (struct sockaddr*) &sockaddr,&clisocklen);
@@ -106,7 +107,7 @@ int dealreq(int sock)
 						shutdown(sock,2);
 						FD_CLR(sock, &rset);
 						printf("\nCommunication with  Client %s on socket %d Closed\n",addrip, sock);
-						return 0;
+						exit(0);
 					}
 					printf("read data [%s] from Client %s on socket %d\n",buffer,addrip,sock);
 					//发送接收到到数据
@@ -114,7 +115,7 @@ int dealreq(int sock)
 					if (len < 0)
 					{
 						printf("Send error\n");
-						return -1;	
+						exit(-1);	
 					}
 					printf("write data [%s] to Client %s on socket %d\n",buffer, addrip,sock);
 					//接收到的是关闭命令
@@ -123,13 +124,13 @@ int dealreq(int sock)
 						shutdown(sock,2);
 						printf("Connection on socket[%d] closed by client[%s]!\n",sock,addrip);
 						sock = -1;
-						return 1;	
+						exit(0);
 					}								
 				}
 				break;
 		}
 	}
-	return 0;
+	exit(0);
 }
 
 void select_test(int port) {
@@ -145,6 +146,8 @@ void select_test(int port) {
 	fd_set watchset;
 	struct timeval tv; /* 声明一个时间变量来保存时间 */
 	struct sockaddr_in cli_sockaddr;
+	
+	
 
 	while(1)
 	{
@@ -206,7 +209,7 @@ int main(int argc, char* argv[])
         fprintf(stderr,"Usage:%s portnumber/a/n",argv[0]);
         return 1;
     }
-    
+    signal( SIGCHLD, SIG_IGN );
     select_test(portnumber);
     return 0; 
 }
